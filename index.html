@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>درس ۱: ورود به دنیای تصاویر پیکسلی و Photoshop</title>
+    <style>
+        :root {
+            /* Color Palette */
+            --bg-body: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-surface-hover: #334155;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --teacher-note-bg: #374151;
+            --teacher-note-border: #f59e0b;
+            --border-color: #334155;
+            
+            /* Typography */
+            --font-base: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --base-size: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-base);
+            font-size: var(--base-size);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* View Modes Architecture */
+        .classroom-only { display: none !important; }
+        
+        body.classroom-mode {
+            --base-size: 17px;
+            --bg-body: #0B1220; /* Darker navy optimized for projectors */
+            --bg-surface: #111827;
+            --border-color: #1f2937;
+            overflow: hidden; /* Prevent vertical scrolling */
+        }
+        
+        body.classroom-mode .teacher-only { display: none !important; }
+        
+        /* Safe display logic for classroom-only elements */
+        body.classroom-mode .classroom-only:not(.scene):not(.btn):not(.scene-nav) { display: block !important; }
+        body.classroom-mode .classroom-only.btn { display: inline-flex !important; }
+        body.classroom-mode .scene-nav { display: flex !important; }
+        
+        body.classroom-mode .nav-header { display: none !important; }
+        
+        /* Adjust main container for Classroom Mode */
+        body.classroom-mode main { 
+            margin-top: 0; 
+            padding-top: 2rem;
+            padding-bottom: 5rem;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            body.classroom-mode .container {
+                width: 96%;
+                max-width: 1400px;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            body.classroom-mode .step-section {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+
+        /* Scene Logic */
+        .scene { display: block; margin-bottom: 2rem; }
+        
+        /* Force hide all scenes in classroom mode unless they are active */
+        body.classroom-mode .scene { display: none !important; margin-bottom: 0; }
+        body.classroom-mode .scene.active-scene { 
+            display: flex !important; 
+            flex-direction: column; 
+            justify-content: center; 
+            animation: fadeIn 0.3s ease-out;
+            height: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Floating Classroom Toolbar & Progress */
+        .classroom-toolbar {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: rgba(11, 18, 32, 0.4);
+            backdrop-filter: blur(4px);
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            transition: opacity 0.2s, background-color 0.2s, border-color 0.2s;
+        }
+        .classroom-toolbar:hover, .classroom-toolbar:focus-within {
+            background-color: rgba(30, 41, 59, 0.95);
+            border-color: var(--border-color);
+        }
+        body:not(.classroom-mode) .classroom-toolbar { display: none !important; }
+        
+        .classroom-progress-bar-container {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background-color: transparent;
+            z-index: 101;
+        }
+        .classroom-progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        body:not(.classroom-mode) .classroom-progress-bar-container { display: none !important; }
+
+        /* Scene Navigation (Classroom Mode) */
+        .scene-nav {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background-color: rgba(11, 18, 32, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            z-index: 100;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        body:not(.classroom-mode) .scene-nav { display: none !important; }
+        .scene-nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            transition: background 0.2s;
+        }
+        .scene-nav-btn:hover, .scene-nav-btn:focus-visible { background-color: var(--primary); outline: none; }
+        .scene-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Utility Classes */
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-row { flex-direction: row; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .flex-wrap { flex-wrap: wrap; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        
+        .gap-1 { gap: 0.25rem; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
+        
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 0.75rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        
+        .ml-1 { margin-left: 0.25rem; }
+        .ml-2 { margin-left: 0.5rem; }
+        .ml-4 { margin-left: 1rem; }
+        
+        .p-1 { padding: 0.25rem; }
+        .p-2 { padding: 0.5rem; }
+        .p-3 { padding: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .pb-3 { padding-bottom: 0.75rem; }
+        .pt-4 { padding-top: 1rem; }
+        
+        .w-full { width: 100%; }
+        .w-1\/2 { width: 50%; }
+        .h-full { height: 100%; }
+        .w-12 { width: 3rem; }
+        .h-12 { height: 3rem; }
+        .w-16 { width: 4rem; }
+        .h-16 { height: 4rem; }
+        .max-w-2xl { max-width: 42rem; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .text-center { text-align: center; }
+        .text-xs { font-size: 0.75rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-lg { font-size: 1.125rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-2xl { font-size: 1.5rem; }
+        .font-bold { font-weight: bold; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        
+        .rounded { border-radius: 0.5rem; }
+        .rounded-lg { border-radius: 0.75rem; }
+        .hidden { display: none !important; }
+        .opacity-70 { opacity: 0.7; }
+        .list-disc { list-style-type: disc; }
+        .display-block { display: block; }
+        .cursor-pointer { cursor: pointer; }
+        .absolute { position: absolute; }
+        .relative { position: relative; }
+        .top-2 { top: 0.5rem; }
+        .right-2 { right: 0.5rem; }
+        .z-10 { z-index: 10; }
+        .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+        .overflow-hidden { overflow: hidden; }
+
+        .border { border: 1px solid var(--border-color); }
+        .border-l { border-left: 1px solid var(--border-color); }
+        .border-2 { border-width: 2px; }
+        .border-dashed { border-style: dashed; }
+        .border-solid { border-style: solid; }
+        .border-b { border-bottom: 1px solid var(--border-color); }
+        .border-t { border-top: 1px solid var(--border-color); }
+        .border-color { border-color: var(--border-color); }
+        .border-primary { border-color: var(--primary); }
+        .border-warning { border-color: var(--warning); }
+        
+        .bg-body { background-color: var(--bg-body); }
+        .bg-surface { background-color: var(--bg-surface); }
+        .bg-surface-hover { background-color: var(--bg-surface-hover); }
+        
+        .text-main { color: var(--text-main); }
+        .text-muted { color: var(--text-muted); }
+        .text-primary { color: var(--primary); }
+        .text-warning { color: var(--warning); }
+        .text-error { color: var(--error); }
+        .text-success { color: var(--success); }
+
+        body.classroom-mode .text-sm { font-size: 1rem; }
+        body.classroom-mode .text-xs { font-size: 0.875rem; }
+
+        .card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn:active { transform: scale(0.98); }
+        .btn:focus-visible { outline: 2px solid white; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5); }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-outline:hover { background-color: rgba(59, 130, 246, 0.1); }
+
+        .btn-secondary {
+            background-color: #334155;
+            color: var(--text-main);
+            border: 1px solid #475569;
+        }
+        .btn-secondary:hover { background-color: #3f5168; border-color: #64748b; }
+
+        .badge {
+            display: inline-block;
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .teacher-note {
+            background-color: var(--teacher-note-bg);
+            border-right: 4px solid var(--teacher-note-border);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.5rem 0 0 0.5rem;
+        }
+
+        .teacher-note-title {
+            color: var(--warning);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 50;
+            padding: 1rem 0;
+        }
+        
+        .mobile-title { display: none; }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--bg-surface);
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        /* Interactive Canvas */
+        .canvas-container {
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            margin: 0 auto;
+            border: 2px dashed var(--border-color);
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        #raster-canvas {
+            image-rendering: pixelated; 
+            transition: transform 0.1s;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 1rem 0;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        /* Educational Visuals */
+        .edu-visual {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 1rem; background: var(--bg-surface-hover); border-radius: 0.5rem; gap: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .edu-icon { font-size: 2rem; }
+
+        /* Workspace Simulator */
+        .workspace-simulator {
+            display: grid;
+            grid-template-columns: 60px 1fr 200px;
+            grid-template-rows: 40px 40px minmax(250px, 400px);
+            gap: 4px;
+            background-color: #2c2c2c;
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            height: 100%;
+        }
+
+        .ws-part {
+            background-color: #535353;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ddd;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .ws-part:hover { background-color: #666; }
+        .ws-part:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
+        .ws-part.active { border-color: var(--success); background-color: rgba(16, 185, 129, 0.2); }
+
+        .ws-app-bar { grid-column: 1 / 4; grid-row: 1 / 2; }
+        .ws-options { grid-column: 1 / 4; grid-row: 2 / 3; }
+        .ws-tools { grid-column: 1 / 2; grid-row: 3 / 4; flex-direction: column; }
+        .ws-document { grid-column: 2 / 3; grid-row: 3 / 4; background-color: #1e1e1e; font-size: 1.2rem; }
+        .ws-panels { grid-column: 3 / 4; grid-row: 3 / 4; }
+
+        /* Forms */
+        .input-group { margin-bottom: 1rem; width: 100%; }
+        .input-group label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.875rem; }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--bg-body);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background-color: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .check-item:hover { background-color: var(--bg-surface-hover); }
+        .check-item:focus-within { border-color: var(--primary); }
+        .check-item input { width: 1.25rem; height: 1.25rem; accent-color: var(--primary); cursor: pointer;}
+
+        .feedback {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        .feedback.success { background-color: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); display: block;}
+        .feedback.error { background-color: rgba(239, 68, 68, 0.1); border: 1px solid var(--error); color: #fca5a5; display: block;}
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--bg-surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            border-bottom: 1px dotted var(--text-muted);
+        }
+        .tooltip:focus-visible { outline: 2px solid var(--primary); border-radius: 4px; padding: 0 4px; }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: var(--bg-surface-hover);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 12px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 1px solid var(--border-color);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+        .tooltip:hover .tooltiptext, .tooltip:focus-within .tooltiptext, .tooltip:focus-visible .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:flex-nowrap { flex-wrap: nowrap; }
+            .md\:w-auto { width: auto; }
+        }
+        @media (max-width: 640px) {
+            .desktop-title { display: none; }
+            .mobile-title { display: inline; }
+            .workspace-simulator {
+                grid-template-columns: 40px 1fr;
+                grid-template-rows: 40px 40px 250px 100px;
+            }
+            .ws-app-bar { grid-column: 1 / 3; grid-row: 1 / 2; }
+            .ws-options { grid-column: 1 / 3; grid-row: 2 / 3; }
+            .ws-tools { grid-column: 1 / 2; grid-row: 3 / 4; }
+            .ws-document { grid-column: 2 / 3; grid-row: 3 / 4; }
+            .ws-panels { grid-column: 1 / 3; grid-row: 4 / 5; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Progress Line for Classroom Mode -->
+    <div class="classroom-progress-bar-container" aria-hidden="true">
+        <div class="classroom-progress-bar-fill" id="classroom-progress"></div>
+    </div>
+
+    <!-- Floating Toolbar for Classroom Mode -->
+    <div class="classroom-toolbar" role="toolbar" aria-label="ابزارهای نمایش کلاسی">
+        <button id="btn-fullscreen" class="btn btn-outline text-sm p-1" aria-label="تمام‌صفحه" title="تمام‌صفحه" style="border: none;">
+            ⛶
+        </button>
+        <button id="btn-exit-classroom" class="btn btn-outline text-sm p-1 px-2" aria-label="بازگشت به راهنمای هنرآموز" title="بازگشت به راهنمای هنرآموز" style="border: none;">
+            ↩
+        </button>
+    </div>
+
+    <!-- Floating Navigation for Scenes (Classroom Mode) -->
+    <div class="scene-nav classroom-only" aria-label="ناوبری ارائه‌ی کلاسی">
+        <button class="scene-nav-btn" id="btn-prev-scene" aria-label="محتوای قبلی">➡️ قبلی</button>
+        <span class="text-sm font-bold" id="scene-indicator" aria-live="polite">مرحله ۱ | صفحه ۱ از ۱</span>
+        <button class="scene-nav-btn" id="btn-next-scene" aria-label="محتوای بعدی">بعدی ⬅️</button>
+    </div>
+
+    <!-- Header for Guide Mode -->
+    <header class="nav-header">
+        <div class="container flex justify-between items-center flex-wrap gap-4">
+            <div>
+                <h1 class="text-lg font-bold">
+                    <span class="desktop-title">درس ۱: ورود به دنیای تصاویر پیکسلی و Photoshop</span>
+                    <span class="mobile-title">درس ۱ | تصاویر پیکسلی و Photoshop</span>
+                </h1>
+                <div class="text-sm text-muted mt-2" id="progress-text">مرحله ۱ از ۸ | ۱۳٪ مسیر درس</div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar" style="width: 13%;"></div>
+                </div>
+            </div>
+            <div class="flex gap-4 flex-wrap items-center">
+                <button id="btn-start-over" class="btn btn-outline text-sm" aria-label="شروع از ابتدا" title="بازگشت به ابتدا بدون پاک کردن اطلاعات ذخیره‌شده">
+                    شروع از ابتدا
+                </button>
+                <div class="flex items-center gap-2">
+                    <div id="mode-status-badge" class="badge text-xs" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color); color: var(--text-main);">نمای فعلی: راهنمای هنرآموز</div>
+                    <button id="toggle-mode-btn" class="btn btn-secondary text-sm" aria-label="تغییر حالت نمایش">
+                        🖥 ورود به نمایش کلاسی
+                    </button>
+                </div>
+            </div>
+        </header>
+
+    <main class="container">
+        
+        <!-- STEP 1: Introduction -->
+        <section id="step-1" class="step-section">
+            <div class="scene">
+                <div class="card text-center flex flex-col items-center gap-4">
+                    <span class="badge">محتوای پشتیبان آموزشی | واحد یادگیری ۱: ویرایش تصاویر پیکسلی</span>
+                    <span class="badge text-warning teacher-only" style="background-color: rgba(245, 158, 11, 0.2);">نسخه مقدماتی پیش از تطبیق با مرجع رسمی کتاب درسی</span>
+                    <h2 class="text-2xl font-bold mt-4">درس ۱: ورود به دنیای تصاویر پیکسلی و Photoshop</h2>
+                    <p class="text-lg text-muted max-w-2xl mx-auto mt-4">
+                        در این درس، ساختار تصاویر پیکسلی را بررسی می‌کنیم، با منطق کلی محیط کاری Photoshop آشنا می‌شویم و ایجاد یا بازکردن یک سند را در قالب موقعیت‌های واقعی تمرین می‌کنیم. هدف، حفظ نام فرمان‌ها نیست؛ بلکه درک منطق تصمیم‌گیری در آغاز یک پروژه گرافیکی است.
+                    </p>
+                    <div class="flex gap-2 justify-center mt-4 flex-wrap">
+                        <span class="badge">ساختار تصویر پیکسلی</span>
+                        <span class="badge">شناخت Workspace</span>
+                        <span class="badge">مدیریت آغاز پروژه</span>
+                    </div>
+                </div>
+
+                <div class="teacher-note teacher-only mt-6">
+                    <div class="teacher-note-title">👨‍🏫 راهنمای هنرآموز: الگوی پیشنهادی اجرای درس</div>
+                    <ul class="ml-4 flex flex-col gap-2 list-disc text-sm" style="padding-right: 1.5rem;">
+                        <li><strong>طرح مسئله:</strong> نمایش یک تصویر و بزرگ‌نمایی شدید.</li>
+                        <li><strong>مشاهده:</strong> شناسایی ساختار پیکسلی.</li>
+                        <li><strong>مفهوم‌سازی:</strong> Raster و Pixel.</li>
+                        <li><strong>مقایسه:</strong> Raster و Vector.</li>
+                        <li><strong>شناخت محیط:</strong> تحلیل Workspace براساس کاربرد.</li>
+                        <li><strong>نمایش عملی:</strong> ایجاد New Document.</li>
+                        <li><strong>تصمیم‌گیری:</strong> New در برابر Open.</li>
+                        <li><strong>تمرین کارگاهی:</strong> اجرای فعالیت در Photoshop توسط هنرجو.</li>
+                    </ul>
+                    <p class="mt-4 font-bold text-sm">اصل طراحی تدریس: ابتدا موقعیت یا تجربه ایجاد شود، سپس مفهوم نام‌گذاری و توضیح داده شود.</p>
+                </div>
+
+                <div class="card mt-6">
+                    <h3 class="text-xl font-bold mb-4">🎯 اهداف یادگیری</h3>
+                    <p class="mb-4 text-sm">در پایان این درس انتظار می‌رود هنرجو بتواند:</p>
+                    <ul class="flex flex-col gap-2 list-disc ml-4 text-sm" style="padding-right: 1.5rem;">
+                        <li>مفهوم Pixel را در ساختار یک تصویر Raster توضیح دهد.</li>
+                        <li>تفاوت کلی تصاویر Raster و Vector را تشخیص دهد.</li>
+                        <li>کاربرد عمومی هر یک را در یک پروژه گرافیکی بیان کند.</li>
+                        <li>اجزای اصلی Workspace در Photoshop را شناسایی کند.</li>
+                        <li>نقش Tools Panel، Document Window و Options Bar را توضیح دهد.</li>
+                        <li>سند جدیدی با ابعاد مشخص ایجاد کند.</li>
+                        <li>یک فایل تصویری موجود را در Photoshop باز کند.</li>
+                        <li>بر اساس شرایط پروژه، بین New و Open تصمیم مناسب بگیرد.</li>
+                    </ul>
+                </div>
+                
+                <div class="flex justify-center mt-8">
+                    <button class="btn next-btn">شروع درس ⬅️</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: Pixels -->
+        <section id="step-2" class="step-section hidden">
+            <!-- Scene 2-1: Observation -->
+            <div class="scene">
+                <div class="card mb-6 border-color" style="border-right: 4px solid var(--primary);">
+                    <h3 class="font-bold text-lg mb-2">موقعیت آغازین</h3>
+                    <p class="text-sm">فایلی تصویری با ابعاد نسبتاً کوچک برای استفاده در یک طراحی در اختیار شما قرار گرفته است. هنگام بزرگ‌نمایی شدید، لبه‌ها و جزئیات تصویر به شکل مربع‌های رنگی قابل مشاهده می‌شوند. علت چیست؟</p>
+                </div>
+
+                <h2 class="text-2xl font-bold mb-6">تحلیل ساختار یک تصویر پیکسلی</h2>
+                
+                <div class="card flex flex-col items-center">
+                    <p class="mb-4 text-center text-sm">میزان بزرگ‌نمایی را تغییر دهید و رفتار تصویر را مشاهده کنید.</p>
+                    <div class="canvas-container" aria-label="شبیه‌ساز بزرگنمایی تصویر">
+                        <canvas id="raster-canvas" width="20" height="20"></canvas>
+                    </div>
+                    <span class="text-xs text-muted mt-2">شبیه‌سازی آموزشی Bitmap</span>
+                    <label for="zoom-slider" class="mt-4 w-full text-center text-sm text-muted">سطح بزرگ‌نمایی (Zoom)</label>
+                    <input type="range" id="zoom-slider" min="1" max="25" value="1" step="0.5" aria-label="کنترل بزرگ‌نمایی">
+                </div>
+            </div>
+
+            <!-- Scene 2-2: Analysis -->
+            <div class="scene">
+                <div class="card flex flex-col justify-center h-full">
+                    <h3 class="text-xl font-bold mb-4">فعالیت تحلیلی: بررسی اثر بزرگ‌نمایی</h3>
+                    <p class="mb-4 text-sm">در بزرگ‌نمایی شدید یک تصویر Raster، کدام ویژگی بیشتر قابل مشاهده می‌شود؟</p>
+                    
+                    <div class="flex flex-col gap-2" id="pixel-quiz">
+                        <button class="btn btn-secondary w-full" data-answer="wrong">مسیرهای هندسی مستقل از Resolution</button>
+                        <button class="btn btn-secondary w-full" data-answer="correct">ساختار پیکسلی تصویر</button>
+                        <button class="btn btn-secondary w-full" data-answer="wrong">خطوط و منحنی‌های برداری</button>
+                    </div>
+                    <div id="pixel-feedback" class="feedback" aria-live="polite"></div>
+
+                    <div class="mt-6 p-4 rounded bg-body border border-color hidden" id="pixel-explanation">
+                        <h4 class="font-bold text-primary mb-2">مدل ذهنی</h4>
+                        <p class="text-sm">تصاویر Raster از شبکه‌ای از واحدهای کوچک رنگی به نام Pixel تشکیل شده‌اند. با بزرگ‌نمایی زیاد، ساختار پیکسلی تصویر قابل مشاهده‌تر می‌شود. می‌توان یک تصویر Raster را مانند سطحی موزاییکی در نظر گرفت که تعداد بسیار زیادی قطعه کوچک رنگی در کنار یکدیگر، تصویر نهایی را تشکیل می‌دهند.</p>
+                    </div>
+                </div>
+
+                <div class="teacher-note teacher-only mt-6">
+                    <div class="teacher-note-title">⚠️ خطای رایج: Pixel و Resolution را یکسان در نظر گرفتن</div>
+                    <p class="text-sm">Pixel واحد سازنده تصویر Raster است. Pixel Dimensions تعداد Pixelهای عرض و ارتفاع را مشخص می‌کند. Resolution مفهومی جداگانه است و در زمینه چاپ معمولاً تراکم Pixelها را بر حسب PPI بیان می‌کند.</p>
+                </div>
+                
+                <div class="flex justify-between mt-8 teacher-only">
+                    <button class="btn btn-outline prev-btn">➡️ قبلی</button>
+                    <button class="btn next-btn">مرحله بعد ⬅️</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: Raster vs Vector -->
+        <section id="step-3" class="step-section hidden">
+            <!-- Scene 3-1: Concepts & Comparison -->
+            <div class="scene">
+                <h2 class="text-2xl font-bold mb-6">Raster و Vector؛ دو منطق متفاوت برای ساخت تصویر</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="card border-color" style="border-top: 4px solid var(--primary);">
+                        <h3 class="text-xl font-bold mb-4 text-center">Raster (پیکسلی)</h3>
+                        <ul class="list-disc ml-4 flex flex-col gap-2 text-sm" style="padding-right: 1rem;">
+                            <li>متشکل از شبکه Pixelها.</li>
+                            <li>مناسب عکس‌ها و تصاویر دارای تغییرات پیوسته رنگ و جزئیات.</li>
+                            <li>دارای تعداد مشخص Pixel.</li>
+                            <li>وابسته به Resolution.</li>
+                            <li><strong>Photoshop</strong> یکی از ابزارهای اصلی کار با تصاویر Raster است.</li>
+                        </ul>
+                    </div>
+                    <div class="card border-color" style="border-top: 4px solid var(--warning);">
+                        <h3 class="text-xl font-bold mb-4 text-center">Vector (برداری)</h3>
+                        <ul class="list-disc ml-4 flex flex-col gap-2 text-sm" style="padding-right: 1rem;">
+                            <li>متشکل از مسیرها و اشکال تعریف‌شده به کمک روابط ریاضی.</li>
+                            <li>مناسب بسیاری از لوگوها، آیکون‌ها و تصویرسازی‌ها.</li>
+                            <li>در تغییر اندازه، ساختار هندسی خود را حفظ می‌کند.</li>
+                            <li><strong>Adobe Illustrator</strong> یکی از ابزارهای رایج طراحی Vector است.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Educational Visual: R/V Comparison Zoom -->
+                <div class="flex flex-col items-center w-full max-w-2xl mx-auto">
+                    <div class="flex flex-row w-full rounded-lg overflow-hidden border border-color bg-surface-hover" style="aspect-ratio: 2/1;" aria-label="مقایسه آموزشی رفتار Raster و Vector در بزرگ‌نمایی">
+                        <div class="w-1/2 h-full relative border-l border-color flex items-center justify-center overflow-hidden">
+                            <span class="absolute top-2 right-2 text-xs bg-body px-2 py-1 rounded z-10 border border-color shadow-sm text-main">Vector</span>
+                            <div id="rv-vector-scale" style="transition: transform 0.1s; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                <svg viewBox="0 0 100 100" width="60%" height="60%" aria-hidden="true" style="overflow: visible;">
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--primary)" stroke-width="4"/>
+                                    <path d="M 30,50 L 70,50 M 50,30 L 50,70" stroke="var(--primary)" stroke-width="2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="w-1/2 h-full relative flex items-center justify-center overflow-hidden">
+                            <span class="absolute top-2 right-2 text-xs bg-body px-2 py-1 rounded z-10 border border-color shadow-sm text-main">Raster</span>
+                            <div id="rv-raster-scale" style="transition: transform 0.1s; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                <canvas id="rv-compare-canvas" width="24" height="24" style="width: 60%; height: 60%; image-rendering: pixelated;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full mt-4">
+                        <label for="rv-compare-slider" class="text-sm text-muted text-center display-block mb-2">سطح بزرگ‌نمایی (Zoom)</label>
+                        <input type="range" id="rv-compare-slider" min="1" max="10" value="1" step="0.1" aria-label="تغییر سطح بزرگ‌نمایی">
+                    </div>
+                    <p class="text-xs text-muted mt-2">مقایسه آموزشی رفتار Raster و Vector در بزرگ‌نمایی</p>
+                </div>
+            </div>
+
+            <!-- Scene 3-2: Activity & AI -->
+            <div class="scene">
+                <div class="card mb-6">
+                    <h3 class="font-bold text-lg mb-4">تصمیم حرفه‌ای</h3>
+                    <p class="mb-4 text-sm">یک فایل عکاسی دیجیتال برای اصلاح نور، رنگ و ترکیب‌بندی اولیه در اختیار شما قرار گرفته است. ساختار اصلی این نوع فایل معمولاً در کدام گروه قرار می‌گیرد؟</p>
+                    <div class="flex gap-4 flex-wrap md:flex-nowrap" id="rv-quiz">
+                        <button class="btn btn-secondary w-full" data-answer="raster">Raster</button>
+                        <button class="btn btn-secondary w-full" data-answer="vector">Vector</button>
+                    </div>
+                    <div id="rv-feedback" class="feedback" aria-live="polite"></div>
+                </div>
+
+                <!-- AI Assistant Tool for Teachers -->
+                <div class="card teacher-only" id="ai-assistant-card" style="border-right: 4px solid var(--primary); background-color: var(--bg-surface);">
+                    <div class="font-bold flex items-center gap-2 mb-2 text-primary">
+                        🤖 هوش مصنوعی به‌عنوان دستیار طراحی تدریس
+                    </div>
+                    <p class="text-sm mb-3 text-main">از هوش مصنوعی می‌توان برای تولید مثال، سناریو و پرسش تکوینی استفاده کرد؛ اما صحت علمی خروجی باید پیش از استفاده در کلاس توسط هنرآموز بررسی شود.</p>
+                    <div class="bg-body p-3 rounded text-sm mb-3 font-mono text-muted border border-color" id="ai-prompt-text" style="direction: rtl; text-align: right;">من هنرآموز رشته شبکه و نرم‌افزار هستم و می‌خواهم تفاوت تصاویر Raster و Vector را به هنرجوی پایه یازدهم آموزش دهم. سه موقعیت واقعی از طراحی گرافیک پیشنهاد کن که هنرجو در هرکدام تشخیص دهد Raster یا Vector مناسب‌تر است. برای هر موقعیت یک پرسش تکوینی و پاسخ مورد انتظار بنویس. پاسخ‌ها باید کوتاه، فنی و مناسب هنرستان باشند.</div>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-outline text-sm" id="btn-copy-prompt">کپی پرامپت</button>
+                        <span id="prompt-copy-feedback" class="text-success text-sm hidden" aria-live="polite">پرامپت کپی شد.</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8 teacher-only">
+                    <button class="btn btn-outline prev-btn">➡️ قبلی</button>
+                    <button class="btn next-btn">مرحله بعد ⬅️</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 4: Workspace -->
+        <section id="step-4" class="step-section hidden">
+            <!-- Scene 4-1: Intro & Simulator -->
+            <div class="scene">
+                <h2 class="text-2xl font-bold mb-2">شناخت Workspace و نقش اجزای اصلی</h2>
+                <p class="text-muted mb-6 text-sm">در یک محیط حرفه‌ای، شناخت محل قرارگیری هر بخش باید بر اساس کاربرد آن باشد، نه صرفاً حفظ نام‌ها. در این مرحله نقش اجزای اصلی Workspace را بررسی می‌کنیم.</p>
+
+                <div class="teacher-note teacher-only">
+                    <div class="teacher-note-title">👨‍🏫 پیشنهاد اجرای تدریس</div>
+                    <p class="text-sm">از آموزش حفظی نام اجزای Workspace خودداری کنید. ابتدا یک ابزار را در Photoshop انتخاب کنید و تغییر Options Bar را نمایش دهید. سپس از هنرجویان بخواهید رابطه ابزار فعال و تنظیمات نمایش‌داده‌شده را تحلیل کنند.</p>
+                    <div class="mt-2 p-2 bg-body rounded border border-color text-sm">
+                        <strong>پرسش تکوینی:</strong> چرا با تغییر ابزار فعال، محتوای Options Bar نیز تغییر می‌کند؟<br>
+                        <strong>پاسخ مورد انتظار:</strong> زیرا Options Bar تنظیمات مرتبط با ابزار انتخاب‌شده را نمایش می‌دهد.
+                    </div>
+                </div>
+
+                <div>
+                    <div class="workspace-simulator" role="application" aria-label="شبیه‌ساز محیط فتوشاپ">
+                        <button class="ws-part ws-app-bar" data-target="app-bar" aria-label="نوار برنامه (Application Bar)">Application Bar</button>
+                        <button class="ws-part ws-options" data-target="options" aria-label="نوار تنظیمات (Options Bar)">Options Bar</button>
+                        <button class="ws-part ws-tools" data-target="tools" aria-label="پنل ابزارها (Tools Panel)">Tools<br>Panel</button>
+                        <button class="ws-part ws-document" data-target="document" aria-label="پنجره سند (Document Window)">Document Window</button>
+                        <button class="ws-part ws-panels" data-target="panels" aria-label="پنل‌ها (Panels)">Panels</button>
+                    </div>
+                    <div class="mt-4 text-sm text-center text-muted">بخش‌های مختلف محیط کاری را بررسی کنید.</div>
+                </div>
+            </div>
+
+            <!-- Scene 4-2: Challenge -->
+            <div class="scene">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <div class="workspace-simulator" role="application" aria-label="شبیه‌ساز محیط فتوشاپ (فعالیت)">
+                            <button class="ws-part ws-app-bar ws-part-chal" data-target="app-bar" aria-label="نوار برنامه (Application Bar)">Application Bar</button>
+                            <button class="ws-part ws-options ws-part-chal" data-target="options" aria-label="نوار تنظیمات (Options Bar)">Options Bar</button>
+                            <button class="ws-part ws-tools ws-part-chal" data-target="tools" aria-label="پنل ابزارها (Tools Panel)">Tools<br>Panel</button>
+                            <button class="ws-part ws-document ws-part-chal" data-target="document" aria-label="پنجره سند (Document Window)">Document Window</button>
+                            <button class="ws-part ws-panels ws-part-chal" data-target="panels" aria-label="پنل‌ها (Panels)">Panels</button>
+                        </div>
+                        <div class="mt-4 text-sm text-center text-muted">روی بخش‌های بالا کلیک کنید. (امکان استفاده از Tab و Enter)</div>
+                    </div>
+
+                    <div class="card flex flex-col justify-center">
+                        <h3 class="text-xl font-bold mb-4 text-primary">چالش شناخت Workspace</h3>
+                        <div id="ws-challenge-container">
+                            <p id="ws-mission-text" class="font-bold mb-4 text-sm" aria-live="polite">مأموریت ۱: بخشی را مشخص کنید که ابزارهای ایجاد و ویرایش تصویر در آن قرار دارند.</p>
+                            <div id="ws-feedback" class="feedback mb-4" aria-live="polite"></div>
+                            <button id="btn-next-ws-mission" class="btn w-full hidden">مأموریت بعدی</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="teacher-note teacher-only mt-6">
+                    <div class="teacher-note-title">⚠️ خطای رایج: حفظ نام اجزا بدون شناخت کاربرد</div>
+                    <p class="text-sm">شناخت Workspace باید بر اساس عملکرد اجزا انجام شود، نه حفظ موقعیت یا نام آنها.</p>
+                </div>
+
+                <div class="flex justify-between mt-8 teacher-only">
+                    <button class="btn btn-outline prev-btn">➡️ قبلی</button>
+                    <button class="btn next-btn">مرحله بعد ⬅️</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 5: New Document -->
+        <section id="step-5" class="step-section hidden">
+            <!-- Scene 5-1: Scenario & Concept -->
+            <div class="scene">
+                <h2 class="text-2xl font-bold mb-2">ایجاد سند متناسب با نیاز پروژه</h2>
+                <p class="text-muted mb-6 text-sm">ایجاد سند جدید فقط اجرای فرمان File → New نیست. پیش از ساخت سند باید مشخصات خروجی پروژه، از جمله ابعاد مورد نیاز، بررسی شود.</p>
+
+                <div class="card mb-6" style="border-right: 4px solid var(--primary);">
+                    <h3 class="font-bold text-lg mb-2">سناریوی پروژه: ایجاد سند دیجیتال</h3>
+                    <p class="text-sm">برای یک پروژه تمرینی، خروجی اولیه باید یک تصویر مربعی با ابعاد <strong>1080 × 1080 Pixel</strong> باشد. سند متناسب با مشخصات پروژه را ایجاد کنید.</p>
+                    <div class="mt-4 p-3 bg-body rounded font-mono text-sm text-center border border-color" dir="ltr">
+                        File &rarr; New | Windows: Ctrl+N | macOS: Cmd+N
+                    </div>
+                </div>
+
+                <!-- Simple Educational Visual -->
+                <div class="edu-visual flex-row gap-6 mx-auto" style="max-width: 500px;">
+                    <div class="text-center">
+                        <div class="text-xs text-muted mb-1">نیاز پروژه</div>
+                        <div class="border border-color rounded p-2 text-sm bg-body">1080 × 1080 px</div>
+                    </div>
+                    <div class="text-2xl text-primary">➡️</div>
+                    <div class="text-center">
+                        <div class="text-xs text-muted mb-1">سند جدید</div>
+                        <div class="border-2 border-dashed border-color rounded w-16 h-16 flex items-center justify-center bg-body mx-auto">
+                            <span class="text-primary text-2xl">+</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 5-2: Simulator Form -->
+            <div class="scene">
+                <div class="card max-w-2xl mx-auto w-full">
+                    <h3 class="font-bold mb-4 border-b pb-2 border-color">New Document</h3>
+                    
+                    <div class="flex gap-4 mb-4 flex-wrap md:flex-nowrap">
+                        <div class="input-group">
+                            <label for="doc-width">Width</label>
+                            <input type="number" id="doc-width" class="form-control" placeholder="مثلاً 800" aria-label="عرض سند">
+                        </div>
+                        <div class="input-group">
+                            <label for="doc-height">Height</label>
+                            <input type="number" id="doc-height" class="form-control" placeholder="مثلاً 600" aria-label="ارتفاع سند">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mb-4 flex-wrap md:flex-nowrap">
+                        <div class="input-group">
+                            <label for="doc-unit">Unit</label>
+                            <select id="doc-unit" class="form-control" aria-label="واحد اندازه‌گیری">
+                                <option value="inches">Inches</option>
+                                <option value="pixels">Pixels</option>
+                                <option value="cm">Centimeters</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="doc-res">
+                                Resolution 
+                                <span tabindex="0" class="tooltip text-primary ml-1" aria-label="راهنمای Resolution">(?)
+                                    <span class="tooltiptext">Resolution در زمینه چاپ معمولاً با PPI بیان می‌شود. در این تمرین معیار اصلی، Pixel Dimensions یعنی Width و Height بر حسب Pixel است.</span>
+                                </span>
+                            </label>
+                            <input type="number" id="doc-res" class="form-control" placeholder="بسته به نیاز پروژه" aria-label="رزولوشن">
+                            <span class="text-xs text-muted mt-1 display-block">در این فعالیت ارزیابی نمی‌شود.</span>
+                        </div>
+                    </div>
+
+                    <button id="btn-create-doc" class="btn w-full mt-2">Create</button>
+                    <div id="doc-feedback" class="feedback" aria-live="polite"></div>
+                </div>
+
+                <div class="teacher-note teacher-only mt-6">
+                    <div class="teacher-note-title">⚠️ خطای رایج: حفظ اعداد بدون منطق</div>
+                    <p class="text-sm">خطا: "1080 × 1080 را اندازه استاندارد همه پروژه‌ها در نظر می‌گیرم."</p>
+                    <p class="text-sm">راهکار: ابعاد سند تابع مشخصات پروژه و خروجی موردنظر است. 1080 × 1080 در این درس فقط یک سناریوی تمرینی است.</p>
+                </div>
+
+                <div class="flex justify-between mt-8 teacher-only">
+                    <button class="btn btn-outline prev-btn">➡️ قبلی</button>
+                    <button class="btn next-btn">مرحله بعد ⬅️</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 6: New or Open -->
+        <section id="step-6" class="step-section hidden">
+            <!-- Scene 6-1: Concepts -->
+            <div class="scene">
+                <h2 class="text-2xl font-bold mb-2">تصمیم‌گیری در آغاز پروژه: New یا Open؟</h2>
+                <p class="text-muted mb-6 text-sm">به وضعیت شروع پروژه توجه کنید: آیا فایل پایه‌ای وجود دارد یا باید سند تازه‌ای ایجاد شود؟</p>
+
+                <div class="flex gap-4 mb-6 flex-wrap md:flex-nowrap">
+                    <div class="card w-full text-center p-4 border border-color flex flex-col items-center">
+                        <div class="w-12 h-12 border-2 border-dashed border-primary rounded flex items-center justify-center mb-3 text-primary text-xl mx-auto">+</div>
+                        <h4 class="font-bold text-primary text-lg">New (جدید)</h4>
+                        <p class="text-sm mt-2 text-main">زمانی که پروژه به ایجاد یک سند جدید نیاز دارد.</p>
+                    </div>
+                    <div class="card w-full text-center p-4 border border-color flex flex-col items-center">
+                        <div class="w-12 h-12 border-2 border-solid border-warning rounded flex items-center justify-center mb-3 bg-surface-hover mx-auto">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>
+                        </div>
+                        <h4 class="font-bold text-warning text-lg">Open (بازکردن)</h4>
+                        <p class="text-sm mt-2 text-main">زمانی که فایل موجودی باید برای مشاهده یا ویرایش در Photoshop باز شود.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 6-2: Scenarios -->
+            <div class="scene">
+                <div class="teacher-note teacher-only mb-6">
+                    <div class="teacher-note-title">👨‍🏫 راهنمای اجرای فعالیت New / Open</div>
+                    <p class="text-sm mb-3">از هنرجو فقط انتخاب New یا Open را نخواهید؛ پس از انتخاب، دلیل تصمیم او را نیز بپرسید. هدف این فعالیت تشخیص وضعیت شروع پروژه است، نه حفظ نام فرمان‌ها.</p>
+                    
+                    <details class="bg-body p-3 rounded border border-color">
+                        <summary class="font-bold text-sm cursor-pointer">🔑 کلید و منطق پاسخ‌ها</summary>
+                        <ul class="mt-3 flex flex-col gap-3 text-sm text-main list-disc ml-4" style="padding-right: 1.5rem;">
+                            <li><strong>رویداد هفته پژوهش &larr; Open:</strong> دلیل: فایل JPEG از قبل وجود دارد و قرار است همان فایل ویرایش شود.</li>
+                            <li><strong>طراحی پوستر از ابتدا &larr; New:</strong> دلیل: سند پایه‌ای وجود ندارد و پروژه باید از ابتدا ساخته شود.</li>
+                            <li><strong>تصویر محصول PNG &larr; Open:</strong> دلیل: فایل موجود است و قرار است همان فایل اصلاح شود.</li>
+                            <li><strong>ایجاد سند 1920×1080 بدون فایل پایه &larr; New:</strong> دلیل: پروژه نیازمند ایجاد سند جدید است.</li>
+                        </ul>
+                    </details>
+                </div>
+
+                <div class="card mx-auto max-w-2xl w-full" id="scenario-card">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2 border-color">
+                        <h3 class="font-bold text-lg">تحلیل موقعیت</h3>
+                        <span id="scenario-counter" class="text-sm text-muted">موقعیت ۱ از ۴</span>
+                    </div>
+                    
+                    <p id="scenario-text" class="text-lg mb-6 text-center" style="min-height: 80px; display: flex; align-items: center; justify-content: center;" aria-live="polite">
+                        <!-- Text injected by JS -->
+                    </p>
+
+                    <div class="flex gap-4 flex-wrap md:flex-nowrap mb-4" id="scenario-buttons">
+                        <button class="btn btn-secondary w-full" data-answer="new">ایجاد سند جدید (New)</button>
+                        <button class="btn btn-secondary w-full" data-answer="open">بازکردن فایل (Open)</button>
+                    </div>
+                    <div id="scenario-feedback" class="feedback mb-4" aria-live="polite"></div>
+                    <button id="btn-next-scenario" class="btn w-full hidden">موقعیت بعدی</button>
+                </div>
+
+                <div class="flex justify-between mt-8 teacher-only">
+                    <button class="btn btn-outline prev-btn">➡️ قبلی</button>
+                    <button class="btn next-btn">مرحله بعد ⬅️</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 7: Workshop Checklist -->
+        <section id="step-7" class="step-section hidden">
+            <!-- Scene 7-1: Checklist Part 1 -->
+            <div class="scene">
+                <h2 class="text-2xl font-bold mb-6">تمرین کارگاهی در Photoshop</h2>
+                
+                <div class="teacher-note teacher-only mb-6">
+                    <div class="teacher-note-title">👨‍🏫 راهنمای اجرای تمرین کارگاهی</div>
+                    <p class="text-sm">این Checklist برای پیگیری انجام فعالیت توسط هنرجو طراحی شده و نمره رسمی تولید نمی‌کند. هنگام اجرای فعالیت، علاوه بر تکمیل مراحل، میزان استقلال هنرجو در انجام کار را مشاهده کنید.</p>
+                    <div class="mt-3">
+                        <strong class="text-sm">شواهد قابل مشاهده:</strong>
+                        <ul class="list-disc ml-4 text-sm mt-1 text-main" style="padding-right: 1.5rem;">
+                            <li>Photoshop را بدون مشکل اجرا می‌کند.</li>
+                            <li>سند را با ابعاد خواسته‌شده ایجاد می‌کند.</li>
+                            <li>Tools Panel و Document Window را تشخیص می‌دهد.</li>
+                            <li>تغییر Options Bar را هنگام تغییر ابزار مشاهده می‌کند.</li>
+                            <li>فایل موجود را با Open باز می‌کند.</li>
+                            <li>تفاوت New و Open را با دلیل توضیح می‌دهد.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <p class="mb-4 text-sm">اکنون مفاهیم این درس را در محیط واقعی نرم‌افزار اجرا کنید. پس از انجام هر مرحله، آن را علامت بزنید.</p>
+                    
+                    <div class="flex flex-col gap-3 text-sm" id="workshop-checklist-p1">
+                        <label class="check-item" for="chk-1">
+                            <input type="checkbox" id="chk-1" class="workshop-chk">
+                            <span>Photoshop را اجرا کردم.</span>
+                        </label>
+                        <label class="check-item" for="chk-2">
+                            <input type="checkbox" id="chk-2" class="workshop-chk">
+                            <span>یک سند جدید با ابعاد 1080 × 1080 Pixel ایجاد کردم.</span>
+                        </label>
+                        <label class="check-item" for="chk-3">
+                            <input type="checkbox" id="chk-3" class="workshop-chk">
+                            <span>Tools Panel را شناسایی کردم.</span>
+                        </label>
+                        <label class="check-item" for="chk-4">
+                            <input type="checkbox" id="chk-4" class="workshop-chk">
+                            <span>Document Window را شناسایی کردم.</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene 7-2: Checklist Part 2 -->
+            <div class="scene">
+                <div class="card">
+                    <p class="mb-4 text-sm">ادامه فعالیت کارگاهی:</p>
+                    
+                    <div class="flex flex-col gap-3 text-sm" id="workshop-checklist-p2">
+                        <label class="check-item" for="chk-5">
+                            <input type="checkbox" id="chk-5" class="workshop-chk">
+                            <span>دو ابزار مختلف را انتخاب کردم و تغییر Options Bar را بررسی کردم.</span>
+                        </label>
+                        <label class="check-item" for="chk-6">
+                            <input type="checkbox" id="chk-6" class="workshop-chk">
+                            <span>یک فایل تصویری موجود را با File → Open باز کردم.</span>
+                        </label>
+                        <label class="check-item" for="chk-7">
+                            <input type="checkbox" id="chk-7" class="workshop-chk">
+                            <span>تفاوت کاربرد New و Open را در محیط واقعی بررسی کردم.</span>
+                        </label>
+                    </div>
+                    <div id="checklist-feedback" class="feedback success mt-4 text-center hidden" aria-live="polite">
+                        تمرین کارگاهی درس ۱ تکمیل شد.
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8 teacher-only">
+                    <button class="btn btn-outline prev-btn">➡️ قبلی</button>
+                    <button class="btn next-btn">مرحله بعد ⬅️</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 8: Conclusion & Assessment -->
+        <section id="step-8" class="step-section hidden">
+            <!-- Form wraps multiple scenes for Classroom mode to maintain HTML validity -->
+            <form id="assessment-form" class="h-full flex flex-col justify-center">
+                
+                <!-- Scene 8-1: Concept Map (Shared) & Teacher Eval (Teacher Only) -->
+                <div class="scene">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-4">نقشه مفهومی درس ۱</h2>
+                            <div class="card flex flex-col items-center gap-2 mb-6">
+                                <div class="badge w-full text-center flex items-center justify-center gap-2"><span>⊞</span> Pixel | پیکسل</div>
+                                <div>⬇️</div>
+                                <div class="badge w-full text-center flex items-center justify-center gap-2"><span>🖼️</span> Raster Image | تصویر پیکسلی</div>
+                                <div>⬇️</div>
+                                <div class="badge w-full text-center flex items-center justify-center gap-2" style="background-color:rgba(245,158,11,0.2);color:var(--warning)"><span>🖥️</span> Workspace | محیط کار</div>
+                                <div>⬇️</div>
+                                <div class="badge w-full text-center flex items-center justify-center gap-2"><span>📋</span> Project Requirements | نیازهای پروژه</div>
+                                <div>⬇️</div>
+                                <div class="flex gap-2 w-full flex-wrap md:flex-nowrap">
+                                    <div class="badge w-full text-center flex items-center justify-center gap-2"><span>📄</span> New</div>
+                                    <div class="badge w-full text-center flex items-center justify-center gap-2"><span>📁</span> Open</div>
+                                </div>
+                            </div>
+                            <p class="text-muted text-sm">در این درس، ساختار تصویر Raster را از سطح Pixel بررسی کردیم، اجزای اصلی Workspace در Photoshop را شناختیم و تصمیم‌گیری اولیه برای ایجاد یا بازکردن سند را در قالب موقعیت‌های پروژه تمرین کردیم.</p>
+                            
+                            <div class="mt-6 border-t pt-4 border-color teacher-only">
+                                <h4 class="font-bold mb-2">منابع فنی و مستندات مرجع</h4>
+                                <ul class="text-sm text-muted list-disc ml-4 flex flex-col gap-1" style="padding-right: 1.2rem;">
+                                    <li><a href="https://helpx.adobe.com/photoshop/using/image-essentials.html" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;">Adobe Photoshop — Photoshop image essentials</a></li>
+                                    <li><a href="https://helpx.adobe.com/photoshop/using/workspace-basics.html" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;">Adobe Photoshop — Workspace overview</a></li>
+                                    <li><a href="https://helpx.adobe.com/photoshop/using/create-documents.html" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;">Adobe Photoshop — Create documents</a></li>
+                                    <li><a href="https://helpx.adobe.com/photoshop/using/creating-opening-importing-images.html" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;">Adobe Photoshop — Create, open, and import images</a></li>
+                                </ul>
+                                <p class="text-xs mt-2 opacity-70">اطلاعات فنی این نسخه با مستندات رسمی Adobe تطبیق داده شده است. ساختار و محدوده محتوایی این بسته پس از دسترسی به نسخه رسمی کتاب جدیدالتألیف، بازبینی خواهد شد.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- Teacher Evaluation Guide (Visible in Teacher Mode ONLY) -->
+                            <div class="card teacher-only border-color" style="border-top: 4px solid var(--primary);">
+                                <h3 class="text-xl font-bold mb-2">راهنمای ارزشیابی پایان درس</h3>
+                                <span class="badge mb-4">ویژه هنرآموز</span>
+                                <p class="text-sm mb-4">هدف این بخش، کمک به هنرآموز برای بررسی شواهد یادگیری است و جایگزین ارزشیابی رسمی کتاب درسی نیست.</p>
+                                
+                                <h4 class="font-bold text-sm mb-1">شواهد یادگیری مورد انتظار</h4>
+                                <p class="text-sm mb-2">هنرجو بتواند:</p>
+                                <ul class="list-disc ml-4 text-sm mb-4 text-main" style="padding-right: 1.5rem;">
+                                    <li>ساختار کلی تصویر Raster را با مفهوم Pixel توضیح دهد.</li>
+                                    <li>تفاوت کلی Raster و Vector را تشخیص دهد.</li>
+                                    <li>Tools Panel، Document Window و Options Bar را بر اساس کاربرد شناسایی کند.</li>
+                                    <li>سند جدیدی با ابعاد مشخص ایجاد کند.</li>
+                                    <li>یک فایل تصویری موجود را باز کند.</li>
+                                    <li>بر اساس موقعیت پروژه، New یا Open را انتخاب کند و دلیل تصمیم خود را توضیح دهد.</li>
+                                </ul>
+
+                                <h4 class="font-bold text-sm mb-1">فعالیت پایانی پیشنهادی</h4>
+                                <p class="text-sm mb-4 bg-body p-3 rounded border border-color">از هنرجو بخواهید یک سند جدید با ابعاد تعیین‌شده ایجاد کند، سپس یک فایل تصویری موجود را باز کند. در پایان از او بخواهید توضیح دهد در هر مرحله چرا از New یا Open استفاده کرده است و سه بخش Tools Panel، Document Window و Options Bar را در محیط نرم‌افزار نشان دهد.</p>
+
+                                <h4 class="font-bold text-sm mb-1">سطح مشاهده پیشنهادی</h4>
+                                <p class="text-xs text-muted mb-2">بدون نمره و بدون ذخیره اطلاعات فردی:</p>
+                                <div class="flex gap-2 mb-4 flex-wrap">
+                                    <span class="badge" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color); color: var(--text-main);">مستقل انجام می‌دهد</span>
+                                    <span class="badge" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color); color: var(--text-main);">با راهنمایی جزئی انجام می‌دهد</span>
+                                    <span class="badge" style="background-color: var(--bg-surface-hover); border: 1px solid var(--border-color); color: var(--text-main);">نیازمند مرور است</span>
+                                </div>
+
+                                <h4 class="font-bold text-sm mb-1 text-warning">تصمیم آموزشی</h4>
+                                <p class="text-sm mb-4">اگر هنرجو در اجرای عملی مشکل دارد، بخش مرتبط را مرور کنید؛ اگر فقط اصطلاح را فراموش کرده ولی عملکرد را درست انجام می‌دهد، ابتدا از او بخواهید عملکرد را با زبان خودش توضیح دهد.</p>
+                                
+                                <details class="bg-body p-3 rounded border border-color">
+                                    <summary class="font-bold text-sm cursor-pointer">👁️ پیش‌نمایش خودسنجی هنرجو (نمایش کلاسی)</summary>
+                                    <div class="mt-3 flex flex-col gap-2 text-sm text-muted">
+                                        <p>- می‌توانم ساختار کلی یک تصویر Raster را توضیح دهم.</p>
+                                        <p>- می‌توانم تفاوت کلی Raster و Vector را تشخیص دهم.</p>
+                                        <p>- می‌توانم اجزای اصلی Workspace را بر اساس کاربردشان شناسایی کنم.</p>
+                                        <p>- می‌توانم نقش Tools Panel، Document Window و Options Bar را توضیح دهم.</p>
+                                        <p>- می‌توانم سند جدیدی با ابعاد مشخص ایجاد کنم.</p>
+                                        <p>- می‌توانم بر اساس شرایط پروژه بین New و Open تصمیم بگیرم.</p>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-8 text-center bg-surface-hover border border-color">
+                        <h3 class="font-bold text-lg">درس ۱ | ورود به دنیای تصاویر پیکسلی و Photoshop</h3>
+                        <p class="text-muted mt-2 text-sm">تسلط بر Photoshop فقط به شناخت ابزارها وابسته نیست؛ درک ساختار تصویر و انتخاب درست فرایند کار، بخشی از مهارت حرفه‌ای در تولید محتوای گرافیکی است.</p>
+                        
+                        <div class="flex justify-center flex-wrap md:flex-nowrap gap-4 mt-6">
+                            <!-- Reset is teacher only -->
+                            <button type="button" class="btn btn-secondary text-error teacher-only" id="btn-reset">شروع مجدد و پاک‌کردن فعالیت‌ها</button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between mt-8 teacher-only">
+                        <button type="button" class="btn btn-outline prev-btn">➡️ قبلی</button>
+                    </div>
+                </div>
+
+                <!-- Scene 8-2: Student Self Assessment Part 1 (Classroom Only) -->
+                <div class="scene classroom-only">
+                    <div class="card border-color max-w-2xl mx-auto w-full" style="border-top: 4px solid var(--success);">
+                        <h3 class="text-xl font-bold mb-2">خودسنجی پایان درس (بخش ۱)</h3>
+                        <p class="text-sm text-muted mb-4">این خودسنجی نمره ندارد. پاسخ شما فقط برای تشخیص بخش‌هایی است که ممکن است نیاز به مرور داشته باشند.</p>
+                        
+                        <div class="flex flex-col gap-4">
+                            <!-- Q1 -->
+                            <div class="border-b pb-3 border-color">
+                                <p class="text-sm mb-2" id="q1-desc">می‌توانم ساختار کلی یک تصویر Raster را توضیح دهم.</p>
+                                <div class="flex gap-4 text-sm" role="radiogroup" aria-labelledby="q1-desc">
+                                    <label><input type="radio" name="q1" value="master"> مسلط هستم</label>
+                                    <label><input type="radio" name="q1" value="review"> نیاز به مرور دارم</label>
+                                </div>
+                            </div>
+                            <!-- Q2 -->
+                            <div class="border-b pb-3 border-color">
+                                <p class="text-sm mb-2" id="q2-desc">می‌توانم تفاوت کلی Raster و Vector را تشخیص دهم.</p>
+                                <div class="flex gap-4 text-sm" role="radiogroup" aria-labelledby="q2-desc">
+                                    <label><input type="radio" name="q2" value="master"> مسلط هستم</label>
+                                    <label><input type="radio" name="q2" value="review"> نیاز به مرور دارم</label>
+                                </div>
+                            </div>
+                            <!-- Q3 -->
+                            <div>
+                                <p class="text-sm mb-2" id="q3-desc">می‌توانم اجزای اصلی Workspace را بر اساس کاربردشان شناسایی کنم.</p>
+                                <div class="flex gap-4 text-sm" role="radiogroup" aria-labelledby="q3-desc">
+                                    <label><input type="radio" name="q3" value="master"> مسلط هستم</label>
+                                    <label><input type="radio" name="q3" value="review"> نیاز به مرور دارم</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scene 8-3: Student Self Assessment Part 2 (Classroom Only) -->
+                <div class="scene classroom-only">
+                    <div class="card border-color max-w-2xl mx-auto w-full" style="border-top: 4px solid var(--success);">
+                        <h3 class="text-xl font-bold mb-2">خودسنجی پایان درس (بخش ۲)</h3>
+                        <div class="flex flex-col gap-4">
+                            <!-- Q4 -->
+                            <div class="border-b pb-3 border-color">
+                                <p class="text-sm mb-2" id="q4-desc">می‌توانم نقش Tools Panel، Document Window و Options Bar را توضیح دهم.</p>
+                                <div class="flex gap-4 text-sm" role="radiogroup" aria-labelledby="q4-desc">
+                                    <label><input type="radio" name="q4" value="master"> مسلط هستم</label>
+                                    <label><input type="radio" name="q4" value="review"> نیاز به مرور دارم</label>
+                                </div>
+                            </div>
+                            <!-- Q5 -->
+                            <div class="border-b pb-3 border-color">
+                                <p class="text-sm mb-2" id="q5-desc">می‌توانم سند جدیدی با ابعاد مشخص ایجاد کنم.</p>
+                                <div class="flex gap-4 text-sm" role="radiogroup" aria-labelledby="q5-desc">
+                                    <label><input type="radio" name="q5" value="master"> مسلط هستم</label>
+                                    <label><input type="radio" name="q5" value="review"> نیاز به مرور دارم</label>
+                                </div>
+                            </div>
+                            <!-- Q6 -->
+                            <div>
+                                <p class="text-sm mb-2" id="q6-desc">می‌توانم بر اساس شرایط پروژه بین New و Open تصمیم بگیرم.</p>
+                                <div class="flex gap-4 text-sm" role="radiogroup" aria-labelledby="q6-desc">
+                                    <label><input type="radio" name="q6" value="master"> مسلط هستم</label>
+                                    <label><input type="radio" name="q6" value="review"> نیاز به مرور دارم</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="assessment-feedback" class="feedback mt-4" aria-live="polite"></div>
+                        <div id="review-suggestions" class="mt-4 flex flex-col gap-2 hidden">
+                            <h4 class="font-bold text-sm text-warning mb-1">پیشنهاد مرور:</h4>
+                            <!-- Buttons injected by JS -->
+                        </div>
+                        
+                        <!-- Review Button in Scene 8-3 -->
+                        <div class="mt-8 flex justify-center border-t pt-4 border-color">
+                            <button type="button" class="btn btn-secondary classroom-only" id="btn-review-lesson-main">مرور دوباره درس</button>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </section>
+
+    </main>
+
+    <div class="modal-overlay" id="reset-modal" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+        <div class="modal-content">
+            <h3 id="reset-modal-title" class="font-bold text-xl mb-4 text-error">شروع مجدد</h3>
+            <p class="mb-6 text-main">آیا اطمینان دارید که می‌خواهید تمام فعالیت‌ها و وضعیت‌های ذخیره‌شده پاک شوند؟</p>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <button class="btn btn-secondary" id="btn-cancel-reset">انصراف</button>
+                <button class="btn" style="background-color: var(--error);" id="btn-confirm-reset">بله، پاک شود</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const STATE_KEY = 'lesson1_state_final_v5';
+        let appState = {
+            currentStep: 1,
+            isClassroomMode: false,
+            currentWsMission: 0,
+            currentScenario: 0,
+            checklist: {},
+            assessment: {},
+            currentClassroomScene: 0 
+        };
+        const totalSteps = 8;
+        
+        // --- DOM Elements ---
+        const steps = document.querySelectorAll('.step-section');
+        const nextBtns = document.querySelectorAll('.next-btn');
+        const prevBtns = document.querySelectorAll('.prev-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        
+        const modeBtn = document.getElementById('toggle-mode-btn');
+        const statusBadge = document.getElementById('mode-status-badge');
+        const btnStartOver = document.getElementById('btn-start-over');
+        
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        const btnExitClassroom = document.getElementById('btn-exit-classroom');
+        const classroomProgress = document.getElementById('classroom-progress');
+        
+        // Scene Navigation UI
+        const btnPrevScene = document.getElementById('btn-prev-scene');
+        const btnNextScene = document.getElementById('btn-next-scene');
+        const sceneIndicator = document.getElementById('scene-indicator');
+
+        // Review Lesson Buttons (Classroom only)
+        const btnReviewLessonMain = document.getElementById('btn-review-lesson-main');
+
+        // --- Core Functions ---
+        function saveState() {
+            try { localStorage.setItem(STATE_KEY, JSON.stringify(appState)); } catch(e) {}
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STATE_KEY);
+                if(saved) {
+                    const parsed = JSON.parse(saved);
+                    appState = { ...appState, ...parsed };
+                }
+            } catch(e) {}
+        }
+
+        // Fullscreen Logic Feature Detection & Sync
+        function checkFullscreenSupport() {
+            if (!document.fullscreenEnabled) {
+                btnFullscreen.style.display = 'none';
+            }
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(()=>{});
+            } else {
+                document.exitFullscreen().catch(()=>{});
+            }
+        }
+
+        btnFullscreen.addEventListener('click', toggleFullscreen);
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                btnFullscreen.innerHTML = '⛶';
+                btnFullscreen.title = 'خروج از تمام‌صفحه';
+                btnFullscreen.setAttribute('aria-label', 'خروج از تمام‌صفحه');
+            } else {
+                btnFullscreen.innerHTML = '⛶';
+                btnFullscreen.title = 'تمام‌صفحه';
+                btnFullscreen.setAttribute('aria-label', 'تمام‌صفحه');
+            }
+        });
+
+        // Mode Management
+        function updateModeUI() {
+            const isClassroom = appState.isClassroomMode;
+            document.body.classList.toggle('classroom-mode', isClassroom);
+            
+            if (isClassroom) {
+                updateStepUI(false); 
+            } else {
+                modeBtn.textContent = '🖥 ورود به نمایش کلاسی';
+                statusBadge.textContent = 'نمای فعلی: راهنمای هنرآموز';
+                statusBadge.style.color = 'var(--text-main)';
+                statusBadge.style.borderColor = 'var(--border-color)';
+                
+                // Exit fullscreen if leaving classroom mode
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(()=>{});
+                }
+                
+                // Ensure all scenes are visible for natural scrolling in Guide Mode
+                steps.forEach(step => {
+                    const scenes = step.querySelectorAll('.scene');
+                    scenes.forEach(s => s.classList.remove('active-scene'));
+                });
+            }
+        }
+
+        modeBtn.addEventListener('click', () => {
+            appState.isClassroomMode = true;
+            saveState();
+            updateModeUI();
+        });
+
+        btnExitClassroom.addEventListener('click', () => {
+            appState.isClassroomMode = false;
+            saveState();
+            updateModeUI();
+        });
+        
+        // Navigation (Step & Scene)
+        function getVisibleScenesForStep(stepIndex) {
+            const stepEl = document.getElementById(`step-${stepIndex}`);
+            if(!stepEl) return [];
+            return Array.from(stepEl.querySelectorAll('.scene')).filter(s => {
+                return !s.classList.contains('teacher-only');
+            });
+        }
+
+        function updateStepUI(scroll = true) {
+            // Manage Steps visibility
+            steps.forEach((step, index) => {
+                if(index + 1 === appState.currentStep) {
+                    step.classList.remove('hidden');
+                } else {
+                    step.classList.add('hidden');
+                }
+            });
+            
+            // Sync Global Progress Line
+            const percent = Math.round((appState.currentStep / totalSteps) * 100);
+            progressBar.style.width = `${percent}%`;
+            classroomProgress.style.width = `${percent}%`;
+            progressText.textContent = `مرحله ${appState.currentStep} از ${totalSteps} | ${percent}٪ مسیر درس`;
+            
+            // Manage Scenes in Classroom Mode
+            if (appState.isClassroomMode) {
+                const currentStepEl = document.getElementById(`step-${appState.currentStep}`);
+                const visibleScenes = getVisibleScenesForStep(appState.currentStep);
+                
+                if (appState.currentClassroomScene >= visibleScenes.length) {
+                    appState.currentClassroomScene = visibleScenes.length - 1;
+                }
+                if (appState.currentClassroomScene < 0) appState.currentClassroomScene = 0;
+
+                Array.from(currentStepEl.querySelectorAll('.scene')).forEach(s => s.classList.remove('active-scene'));
+                if (visibleScenes[appState.currentClassroomScene]) {
+                    visibleScenes[appState.currentClassroomScene].classList.add('active-scene');
+                }
+
+                // Update Indicator text exactly as requested: مرحله X | صفحه Y از Z
+                sceneIndicator.textContent = `مرحله ${appState.currentStep} | صفحه ${appState.currentClassroomScene + 1} از ${visibleScenes.length}`;
+            }
+
+            if(scroll && !appState.isClassroomMode) window.scrollTo({top: 0, behavior: 'smooth'});
+            saveState();
+        }
+
+        function goToStep(step, scroll = true) {
+            if(step >= 1 && step <= totalSteps) {
+                if (appState.currentStep !== step) {
+                    appState.currentStep = step;
+                    appState.currentClassroomScene = 0; 
+                }
+                updateStepUI(scroll);
+            }
+        }
+
+        function navigateScene(direction) {
+            if (!appState.isClassroomMode) return;
+            
+            const visibleScenes = getVisibleScenesForStep(appState.currentStep);
+            let nextScene = appState.currentClassroomScene + direction;
+            
+            if (nextScene >= visibleScenes.length) {
+                if (appState.currentStep < totalSteps) {
+                    appState.currentStep++;
+                    appState.currentClassroomScene = 0;
+                    updateStepUI(false);
+                }
+            } else if (nextScene < 0) {
+                if (appState.currentStep > 1) {
+                    appState.currentStep--;
+                    const prevVisibleScenes = getVisibleScenesForStep(appState.currentStep);
+                    appState.currentClassroomScene = prevVisibleScenes.length - 1;
+                    updateStepUI(false);
+                }
+            } else {
+                appState.currentClassroomScene = nextScene;
+                updateStepUI(false);
+            }
+        }
+
+        // Event Listeners for Navigation
+        nextBtns.forEach(btn => btn.addEventListener('click', () => goToStep(appState.currentStep + 1)));
+        prevBtns.forEach(btn => btn.addEventListener('click', () => goToStep(appState.currentStep - 1)));
+        btnStartOver.addEventListener('click', () => goToStep(1));
+        
+        btnNextScene.addEventListener('click', () => navigateScene(1));
+        btnPrevScene.addEventListener('click', () => navigateScene(-1));
+        
+        // Keyboard Presentation Navigation
+        document.addEventListener('keydown', (e) => {
+            if(!appState.isClassroomMode) return;
+            const activeEl = document.activeElement;
+            const isInput = activeEl.tagName === 'INPUT' || activeEl.tagName === 'BUTTON' || activeEl.tagName === 'SELECT' || activeEl.tagName === 'TEXTAREA' || activeEl.getAttribute('role') === 'radiogroup' || activeEl.classList.contains('ws-part');
+            
+            // Allow native interactions if focused on an interactive element
+            if(isInput && e.key !== 'PageDown' && e.key !== 'PageUp') return;
+
+            if(e.key === 'ArrowLeft' || e.key === 'PageDown') {
+                e.preventDefault();
+                navigateScene(1);
+            } else if (e.key === 'ArrowRight' || e.key === 'PageUp') {
+                e.preventDefault();
+                navigateScene(-1);
+            }
+        });
+
+        // Review Lesson (Classroom Mode)
+        const reviewLessonHandler = () => {
+            appState.currentStep = 1;
+            appState.currentClassroomScene = 0;
+            saveState();
+            updateStepUI(false);
+        };
+        if (btnReviewLessonMain) btnReviewLessonMain.addEventListener('click', reviewLessonHandler);
+
+        // --- Step 2: Pixel Canvas Simulator ---
+        const canvas = document.getElementById('raster-canvas');
+        const ctx = canvas.getContext('2d');
+        const zoomSlider = document.getElementById('zoom-slider');
+        
+        function drawBaseImage() {
+            ctx.fillStyle = '#ffffff'; 
+            ctx.fillRect(0, 0, 20, 20);
+            
+            for(let y=0; y<20; y++){
+                for(let x=0; x<20; x++){
+                    let dx = x - 10;
+                    let dy = y - 10;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 8) {
+                        let intensity = Math.floor(255 - (dist * 30));
+                        if(intensity < 0) intensity = 0;
+                        ctx.fillStyle = `rgb(${intensity}, ${intensity+50}, 255)`;
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(8, 8, 4, 4);
+        }
+        drawBaseImage();
+
+        zoomSlider.addEventListener('input', (e) => {
+            const scale = e.target.value;
+            canvas.style.transform = `scale(${scale})`;
+        });
+
+        const pixelBtns = document.querySelectorAll('#pixel-quiz .btn');
+        const pixelFeedback = document.getElementById('pixel-feedback');
+        pixelBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const isCorrect = e.target.dataset.answer === 'correct';
+                if(isCorrect) {
+                    pixelFeedback.className = 'feedback success';
+                    pixelFeedback.textContent = 'تحلیل درست است. تصویر Raster از شبکه‌ای از واحدهای کوچک رنگی (Pixel) تشکیل شده است.';
+                    document.getElementById('pixel-explanation').classList.remove('hidden');
+                } else {
+                    pixelFeedback.className = 'feedback error';
+                    pixelFeedback.textContent = 'پاسخ را با رفتار تصویر در بزرگ‌نمایی مقایسه کنید: آیا خطوط پیوسته می‌بینید یا مربع‌های رنگی؟';
+                }
+            });
+        });
+
+        // --- Step 3: Raster vs Vector ---
+        // Visual Slider Logic
+        const rvSlider = document.getElementById('rv-compare-slider');
+        const rvVectorScale = document.getElementById('rv-vector-scale');
+        const rvRasterScale = document.getElementById('rv-raster-scale');
+        const rvCanvas = document.getElementById('rv-compare-canvas');
+        const rvCtx = rvCanvas.getContext('2d');
+
+        // Draw simple raster circle on 24x24 canvas
+        rvCtx.fillStyle = '#3b82f6';
+        rvCtx.beginPath();
+        rvCtx.arc(12, 12, 10, 0, Math.PI * 2);
+        rvCtx.fill();
+        rvCtx.strokeStyle = '#3b82f6';
+        rvCtx.lineWidth = 1;
+        rvCtx.beginPath();
+        rvCtx.moveTo(7, 12); rvCtx.lineTo(17, 12);
+        rvCtx.moveTo(12, 7); rvCtx.lineTo(12, 17);
+        rvCtx.stroke();
+
+        rvSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            rvVectorScale.style.transform = `scale(${val})`;
+            rvRasterScale.style.transform = `scale(${val})`;
+        });
+
+        // Quiz Logic
+        const rvBtns = document.querySelectorAll('#rv-quiz .btn');
+        const rvFeedback = document.getElementById('rv-feedback');
+        rvBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const isRaster = e.target.dataset.answer === 'raster';
+                if(isRaster) {
+                    rvFeedback.className = 'feedback success';
+                    rvFeedback.textContent = 'تحلیل درست است. تصاویر عکاسی دیجیتال نمونه رایجی از محتوای Raster هستند.';
+                } else {
+                    rvFeedback.className = 'feedback error';
+                    rvFeedback.textContent = 'به ماهیت عکس دیجیتال دقت کنید: آیا شامل خطوط ریاضی است یا شبکه‌ای از رنگ‌ها؟';
+                }
+            });
+        });
+
+        // AI Prompt Copy
+        const btnCopyPrompt = document.getElementById('btn-copy-prompt');
+        const promptCopyFeedback = document.getElementById('prompt-copy-feedback');
+        const aiPromptText = document.getElementById('ai-prompt-text');
+        
+        btnCopyPrompt.addEventListener('click', () => {
+            const textToCopy = aiPromptText.innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    promptCopyFeedback.classList.remove('hidden');
+                    setTimeout(() => promptCopyFeedback.classList.add('hidden'), 3000);
+                });
+            }
+        });
+
+        // --- Step 4: Workspace Challenge ---
+        const wsParts = document.querySelectorAll('.ws-part-chal'); 
+        const wsFeedback = document.getElementById('ws-feedback');
+        const wsMissionText = document.getElementById('ws-mission-text');
+        const btnNextWsMission = document.getElementById('btn-next-ws-mission');
+        
+        let wsMissions = [
+            { target: 'tools', text: 'مأموریت ۱: بخشی را مشخص کنید که ابزارهای ایجاد و ویرایش تصویر در آن قرار دارند.', hint: 'به کاربرد بخش‌ها توجه کنید: ابزارهای طراحی در کدام قسمت دسته‌بندی شده‌اند؟', successMsg: 'انتخاب درست است. Tools Panel محل دسترسی به ابزارهای ایجاد و ویرایش تصویر است.' },
+            { target: 'document', text: 'مأموریت ۲: بخشی را مشخص کنید که سند در حال ویرایش در آن نمایش داده می‌شود.', hint: 'سند یا بوم اصلی در کدام قسمت فضای بیشتری را اشغال کرده است؟', successMsg: 'انتخاب درست است. سند فعال در Document Window نمایش داده می‌شود.' },
+            { target: 'options', text: 'مأموریت ۳: بخشی را مشخص کنید که تنظیمات ابزار فعال را نمایش می‌دهد.', hint: 'نوار تنظیمات معمولاً در دسترسی سریع، زیر منوهای اصلی قرار می‌گیرد.', successMsg: 'انتخاب درست است. Options Bar تنظیمات مرتبط با ابزار فعال را نمایش می‌دهد.' }
+        ];
+        let currentWsMission = 0;
+
+        wsParts.forEach(part => {
+            part.addEventListener('click', (e) => {
+                if(currentWsMission >= wsMissions.length) return; 
+                
+                const p = e.currentTarget;
+                wsParts.forEach(el => el.classList.remove('active'));
+                p.classList.add('active');
+
+                const expected = wsMissions[currentWsMission].target;
+                if(p.dataset.target === expected) {
+                    wsFeedback.className = 'feedback success';
+                    wsFeedback.textContent = wsMissions[currentWsMission].successMsg;
+                    
+                    btnNextWsMission.classList.remove('hidden');
+                    if (currentWsMission === wsMissions.length - 1) {
+                        btnNextWsMission.textContent = 'پایان چالش Workspace';
+                    } else {
+                        btnNextWsMission.textContent = 'مأموریت بعدی';
+                    }
+                } else {
+                    wsFeedback.className = 'feedback error';
+                    wsFeedback.textContent = wsMissions[currentWsMission].hint;
+                    btnNextWsMission.classList.add('hidden');
+                }
+            });
+        });
+
+        btnNextWsMission.addEventListener('click', () => {
+            currentWsMission++;
+            appState.currentWsMission = currentWsMission;
+            saveState();
+            
+            btnNextWsMission.classList.add('hidden');
+            wsParts.forEach(p => p.classList.remove('active'));
+
+            if(currentWsMission < wsMissions.length) {
+                wsMissionText.textContent = wsMissions[currentWsMission].text;
+                wsFeedback.style.display = 'none';
+            } else {
+                wsMissionText.textContent = 'سه بخش اصلی Workspace بر اساس کاربردشان شناسایی شدند.';
+                wsFeedback.style.display = 'none';
+            }
+        });
+
+        // --- Step 5: New Document ---
+        const btnCreateDoc = document.getElementById('btn-create-doc');
+        const docFeedback = document.getElementById('doc-feedback');
+        btnCreateDoc.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            const w = document.getElementById('doc-width').value;
+            const h = document.getElementById('doc-height').value;
+            const u = document.getElementById('doc-unit').value;
+            
+            if(w == '1080' && h == '1080' && u == 'pixels') {
+                docFeedback.className = 'feedback success';
+                docFeedback.textContent = 'مشخصات اصلی سند با نیاز پروژه مطابقت دارد.';
+            } else {
+                docFeedback.className = 'feedback error';
+                docFeedback.textContent = 'ابعاد یا واحد سند را با مشخصات پروژه مقایسه کنید.';
+            }
+        });
+
+        // --- Step 6: Scenarios ---
+        const scenarios = [
+            { text: 'واحد روابط عمومی هنرستان یک فایل JPEG از رویداد هفته پژوهش در اختیار شما قرار داده و درخواست اصلاح تصویر را دارد. برای شروع کدام گزینه مناسب است؟', ans: 'open', successMsg: 'تحلیل درست است. دلیل: فایل JPEG از قبل وجود دارد و قرار است همان فایل ویرایش شود، بنابراین باید از فرمان Open استفاده کنیم.' },
+            { text: 'قرار است طراحی یک پوستر جدید از ابتدا آغاز شود و هنوز هیچ سند پروژه‌ای ایجاد نشده است. کدام گزینه نقطه شروع مناسب‌تری است؟', ans: 'new', successMsg: 'تحلیل درست است. دلیل: سند پایه‌ای وجود ندارد و پروژه باید از ابتدا ساخته شود، بنابراین به فرمان New نیاز است.' },
+            { text: 'یک تصویر محصول با فرمت PNG از قبل آماده است و باید اصلاحات تصویری روی همان فایل انجام شود.', ans: 'open', successMsg: 'تحلیل درست است. دلیل: فایل موجود است و قرار است همان فایل اصلاح شود، پس Open انتخاب درستی است.' },
+            { text: 'مشخصات پروژه، ایجاد یک سند جدید با ابعاد 1920 × 1080 Pixel را درخواست کرده است و فایل پایه‌ای وجود ندارد.', ans: 'new', successMsg: 'تحلیل درست است. دلیل: پروژه نیازمند ایجاد سند جدید است و محتوای قبلی در کار نیست.' }
+        ];
+        let currentScenario = 0;
+        const scenarioText = document.getElementById('scenario-text');
+        const scenarioCounter = document.getElementById('scenario-counter');
+        const scenarioFeedback = document.getElementById('scenario-feedback');
+        const scenarioBtns = document.querySelectorAll('#scenario-buttons .btn');
+        const scenarioCard = document.getElementById('scenario-card');
+        const btnNextScenario = document.getElementById('btn-next-scenario');
+
+        function loadScenario() {
+            if(currentScenario < scenarios.length) {
+                scenarioText.textContent = scenarios[currentScenario].text;
+                scenarioCounter.textContent = `موقعیت ${currentScenario + 1} از ۴`;
+                scenarioFeedback.style.display = 'none';
+                document.getElementById('scenario-buttons').style.display = 'flex';
+                btnNextScenario.classList.add('hidden');
+                scenarioCard.style.borderTop = 'none';
+            } else {
+                scenarioText.textContent = 'چهار موقعیت تحلیل شد. اکنون می‌توانید بر اساس شرایط پروژه بین ایجاد سند جدید و بازکردن فایل موجود تصمیم بگیرید.';
+                scenarioCounter.textContent = 'تکمیل شد';
+                scenarioFeedback.style.display = 'none';
+                document.getElementById('scenario-buttons').style.display = 'none';
+                btnNextScenario.classList.add('hidden');
+                scenarioCard.style.borderTop = `4px solid var(--success)`;
+            }
+        }
+
+        scenarioBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const ans = e.target.dataset.answer;
+                if(ans === scenarios[currentScenario].ans) {
+                    scenarioFeedback.className = 'feedback success';
+                    scenarioFeedback.textContent = scenarios[currentScenario].successMsg;
+                    btnNextScenario.classList.remove('hidden');
+                    if (currentScenario === scenarios.length - 1) {
+                        btnNextScenario.textContent = 'پایان تحلیل موقعیت‌ها';
+                    } else {
+                        btnNextScenario.textContent = 'موقعیت بعدی';
+                    }
+                } else {
+                    scenarioFeedback.className = 'feedback error';
+                    scenarioFeedback.textContent = 'وضعیت فایل ورودی را بررسی کنید: آیا فایل از قبل وجود دارد یا باید سند تازه‌ای ایجاد شود؟';
+                    btnNextScenario.classList.add('hidden');
+                }
+            });
+        });
+
+        btnNextScenario.addEventListener('click', () => {
+            currentScenario++;
+            appState.currentScenario = currentScenario;
+            saveState();
+            loadScenario();
+        });
+
+        // --- Step 7: Checklist ---
+        const checkboxes = document.querySelectorAll('.workshop-chk');
+        const checkFeedback = document.getElementById('checklist-feedback');
+        
+        function updateChecklistStatus(save = true) {
+            let allChecked = true;
+            checkboxes.forEach(chk => {
+                if(!chk.checked) allChecked = false;
+                if (save) appState.checklist[chk.id] = chk.checked;
+            });
+            
+            if (save) saveState();
+            
+            if(allChecked) {
+                checkFeedback.classList.remove('hidden');
+            } else {
+                checkFeedback.classList.add('hidden');
+            }
+        }
+
+        checkboxes.forEach(chk => {
+            chk.addEventListener('change', () => updateChecklistStatus(true));
+        });
+
+        // --- Step 8: Smart Assessment ---
+        const form = document.getElementById('assessment-form');
+        const assFeedback = document.getElementById('assessment-feedback');
+        const reviewContainer = document.getElementById('review-suggestions');
+        
+        const qMap = {
+            q1: { step: 2, label: 'ساختار Raster' },
+            q2: { step: 3, label: 'Raster و Vector' },
+            q3: { step: 4, label: 'Workspace' },
+            q4: { step: 4, label: 'Workspace' }, 
+            q5: { step: 5, label: 'ایجاد سند' },
+            q6: { step: 6, label: 'New و Open' }
+        };
+
+        function evaluateAssessment(save = true) {
+            const formData = new FormData(form);
+            let total = 6;
+            let answered = 0;
+            let reviewNeeded = new Map();
+
+            if (save) appState.assessment = {};
+
+            for(let [key, value] of formData.entries()) {
+                answered++;
+                if (save) appState.assessment[key] = value;
+                if(value === 'review') {
+                    reviewNeeded.set(qMap[key].step, qMap[key].label);
+                }
+            }
+
+            if (save) saveState();
+
+            reviewContainer.innerHTML = '<h4 class="font-bold text-sm text-warning mb-1">پیشنهاد مرور:</h4>';
+
+            if(answered === total) {
+                if(reviewNeeded.size === 0) {
+                    assFeedback.className = 'feedback success';
+                    assFeedback.textContent = 'همه موارد را «مسلط هستم» انتخاب کرده‌اید. اگر فعالیت کارگاهی را نیز مستقل انجام داده‌اید، اهداف اصلی این درس مرور شده‌اند.';
+                    reviewContainer.classList.add('hidden');
+                } else {
+                    assFeedback.className = 'feedback error';
+                    assFeedback.textContent = 'برخی مفاهیم نیاز به مرور دارند. روی دکمه‌های زیر کلیک کنید تا مستقیماً به بخش مربوطه بروید:';
+                    assFeedback.style.color = 'var(--text-main)';
+                    assFeedback.style.borderColor = 'var(--warning)';
+                    
+                    reviewContainer.classList.remove('hidden');
+                    reviewNeeded.forEach((label, stepNum) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-outline text-sm w-full md:w-auto mt-2 ml-2';
+                        btn.type = 'button';
+                        btn.textContent = `مرور ${label}`;
+                        btn.onclick = () => {
+                            goToStep(stepNum);
+                        };
+                        reviewContainer.appendChild(btn);
+                    });
+                }
+            }
+        }
+
+        form.addEventListener('change', () => evaluateAssessment(true));
+
+        // --- Modal & Reset Functionality (Teacher Only) ---
+        const btnReset = document.getElementById('btn-reset');
+        const modal = document.getElementById('reset-modal');
+        const btnCancelReset = document.getElementById('btn-cancel-reset');
+        const btnConfirmReset = document.getElementById('btn-confirm-reset');
+        let lastFocusedElement;
+
+        function openModal() {
+            lastFocusedElement = document.activeElement;
+            modal.style.display = 'flex';
+            btnCancelReset.focus();
+            document.addEventListener('keydown', handleModalEsc);
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            if (lastFocusedElement) lastFocusedElement.focus();
+            document.removeEventListener('keydown', handleModalEsc);
+        }
+
+        function handleModalEsc(e) {
+            if (e.key === 'Escape') closeModal();
+        }
+
+        if (btnReset) btnReset.addEventListener('click', openModal);
+        btnCancelReset.addEventListener('click', closeModal);
+        
+        btnConfirmReset.addEventListener('click', () => {
+            localStorage.removeItem(STATE_KEY);
+            
+            appState = {
+                currentStep: 1,
+                isClassroomMode: false,
+                currentWsMission: 0,
+                currentScenario: 0,
+                checklist: {},
+                assessment: {},
+                currentClassroomScene: 0
+            };
+
+            // Reset UI DOM Specifics
+            currentWsMission = 0;
+            wsMissionText.textContent = wsMissions[0].text;
+            wsParts.forEach(p => p.classList.remove('active'));
+            wsFeedback.style.display = 'none';
+            btnNextWsMission.classList.add('hidden');
+
+            document.getElementById('doc-width').value = '';
+            document.getElementById('doc-height').value = '';
+            document.getElementById('doc-res').value = '';
+            docFeedback.style.display = 'none';
+
+            currentScenario = 0;
+            loadScenario();
+
+            form.reset();
+            assFeedback.style.display = 'none';
+            reviewContainer.classList.add('hidden');
+            
+            pixelFeedback.style.display = 'none';
+            document.getElementById('pixel-explanation').classList.add('hidden');
+            zoomSlider.value = 1;
+            canvas.style.transform = 'scale(1)';
+
+            rvFeedback.style.display = 'none';
+            rvSlider.value = 1;
+            rvVectorScale.style.transform = `scale(1)`;
+            rvRasterScale.style.transform = `scale(1)`;
+            
+            closeModal();
+            applyStateToUI();
+        });
+
+        // --- Initialization ---
+        function applyStateToUI() {
+            checkFullscreenSupport();
+            updateModeUI();
+
+            // Apply Checklist
+            checkboxes.forEach(chk => {
+                chk.checked = !!appState.checklist[chk.id];
+            });
+            updateChecklistStatus(false);
+
+            // Apply Assessment
+            Object.keys(appState.assessment).forEach(key => {
+                const input = form.querySelector(`input[name="${key}"][value="${appState.assessment[key]}"]`);
+                if(input) input.checked = true;
+            });
+            evaluateAssessment(false);
+
+            // Apply Workspace Mission
+            currentWsMission = appState.currentWsMission;
+            if (currentWsMission < wsMissions.length) {
+                wsMissionText.textContent = wsMissions[currentWsMission].text;
+            } else {
+                wsMissionText.textContent = 'سه بخش اصلی Workspace بر اساس کاربردشان شناسایی شدند.';
+                wsFeedback.style.display = 'none';
+                btnNextWsMission.classList.add('hidden');
+            }
+
+            // Apply Scenarios
+            currentScenario = appState.currentScenario;
+            loadScenario();
+
+            // Apply Step and Scene
+            updateStepUI(true);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            applyStateToUI();
+        });
+
+    </script>
+</body>
+</html>
